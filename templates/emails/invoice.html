@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Payment Required</title>
+    <!-- PHISHING SIMULATION - TRAINING PURPOSE ONLY - This is a cybersecurity awareness exercise -->
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #ffffff; border: 1px solid #ddd; padding: 30px; border-radius: 5px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #1976d2; margin: 0;">{{company_name}}</h1>
+            <p style="color: #666; margin: 5px 0;">Invoice Notification</p>
+        </div>
+        
+        <h2 style="color: #333;">Invoice Payment Required</h2>
+        
+        <p>Dear {{employee_name}},</p>
+        
+        <p>We have an outstanding invoice that requires your immediate attention. Please review and process the payment as soon as possible.</p>
+        
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <table style="width: 100%;">
+                <tr>
+                    <td style="padding: 5px 0;"><strong>Invoice Number:</strong></td>
+                    <td style="padding: 5px 0;">INV-2024-{{random_number}}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;"><strong>Amount Due:</strong></td>
+                    <td style="padding: 5px 0; color: #d32f2f; font-size: 18px; font-weight: bold;">${{amount}}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;"><strong>Due Date:</strong></td>
+                    <td style="padding: 5px 0;">{{due_date}}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <p style="background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
+            <strong>Important:</strong> Payment is overdue. Please click below to view and pay the invoice to avoid service interruption.
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{tracking_link}}" style="background-color: #1976d2; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                View & Pay Invoice
+            </a>
+        </div>
+        
+        <p style="font-size: 12px; color: #666;">
+            If you have any questions about this invoice, please contact our billing department.
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+        
+        <p style="font-size: 10px; color: #999; text-align: center;">
+            This is an automated message from {{company_name}} Billing Department
+        </p>
+    </div>
+    <!-- PHISHING SIMULATION - TRAINING PURPOSE ONLY - This is a cybersecurity awareness exercise -->
+</body>
+</html>
+

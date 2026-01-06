@@ -1,0 +1,169 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Dashboard - Phishing Simulator{% endblock %}
+
+{% block content %}
+<h1 class="h2 mb-4">Dashboard</h1>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-people"></i> Total Employees</h5>
+                <h2 class="text-primary">{{ total_employees }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-envelope-paper"></i> Total Campaigns</h5>
+                <h2 class="text-info">{{ total_campaigns }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-cursor-click"></i> Total Clicks</h5>
+                <h2 class="text-warning">{{ total_clicks }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Campaigns -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Campaigns</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_campaigns %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Template</th>
+                                <th>Status</th>
+                                <th>Clicks</th>
+                                <th>CTR</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for campaign in recent_campaigns %}
+                            <tr>
+                                <td><a href="{{ url_for('admin.campaign_detail', campaign_id=campaign.id) }}">{{ campaign.name }}</a></td>
+                                <td>{{ campaign.template.name if campaign.template else 'N/A' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if campaign.status == 'sent' else 'secondary' }}">
+                                        {{ campaign.status }}
+                                    </span>
+                                </td>
+                                <td>{{ campaign.get_clicks_count() }}</td>
+                                <td>{{ campaign.get_click_through_rate() }}%</td>
+                                <td>{{ campaign.created_at.strftime('%Y-%m-%d') if campaign.created_at else 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No campaigns yet. <a href="{{ url_for('admin.campaigns') }}">Create one</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Risk Scores -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Employee Risk Scores</h5>
+            </div>
+            <div class="card-body">
+                {% if employee_risk_data %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Department</th>
+                                <th>Risk Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in employee_risk_data %}
+                            <tr>
+                                <td>{{ emp.name }}</td>
+                                <td>{{ emp.email }}</td>
+                                <td>{{ emp.department }}</td>
+                                <td>
+                                    <span class="risk-{{ 'high' if emp.risk_score >= 70 else 'medium' if emp.risk_score >= 40 else 'low' }}">
+                                        {{ emp.risk_score }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No employees yet. <a href="{{ url_for('admin.employees') }}">Add employees</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Department Statistics -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Department Statistics</h5>
+            </div>
+            <div class="card-body">
+                {% if dept_stats %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Total Employees</th>
+                                <th>Total Clicks</th>
+                                <th>Avg Risk Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept in dept_stats %}
+                            <tr>
+                                <td><strong>{{ dept.department }}</strong></td>
+                                <td>{{ dept.total_employees }}</td>
+                                <td>{{ dept.total_clicks }}</td>
+                                <td>
+                                    <span class="risk-{{ 'high' if dept.avg_risk_score >= 70 else 'medium' if dept.avg_risk_score >= 40 else 'low' }}">
+                                        {{ dept.avg_risk_score }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No department data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

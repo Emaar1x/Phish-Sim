@@ -1,0 +1,144 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Campaigns - Phishing Simulator{% endblock %}
+
+{% block content %}
+<h1 class="h2 mb-4">Campaigns</h1>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Campaign List</h5>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+                    <i class="bi bi-plus-circle"></i> Create Campaign
+                </button>
+            </div>
+            <div class="card-body">
+                {% if campaigns %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Template</th>
+                                <th>Status</th>
+                                <th>Emails Sent</th>
+                                <th>Clicks</th>
+                                <th>CTR</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for campaign in campaigns %}
+                            <tr>
+                                <td><a href="{{ url_for('admin.campaign_detail', campaign_id=campaign.id) }}">{{ campaign.name }}</a></td>
+                                <td>{{ campaign.template.name if campaign.template else 'N/A' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if campaign.status == 'sent' else 'warning' if campaign.status == 'draft' else 'secondary' }}">
+                                        {{ campaign.status }}
+                                    </span>
+                                </td>
+                                <td>{{ campaign.get_emails_sent_count() }}</td>
+                                <td>{{ campaign.get_clicks_count() }}</td>
+                                <td>{{ campaign.get_click_through_rate() }}%</td>
+                                <td>{{ campaign.created_at.strftime('%Y-%m-%d') if campaign.created_at else 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin.campaign_detail', campaign_id=campaign.id) }}" class="btn btn-sm btn-info">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No campaigns yet. Create your first campaign to get started.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Campaign Modal -->
+<div class="modal fade" id="createCampaignModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Campaign</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createCampaignForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="campaign_name" class="form-label">Campaign Name</label>
+                        <input type="text" class="form-control" id="campaign_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="template_id" class="form-label">Email Template</label>
+                        <select class="form-select" id="template_id" name="template_id" required>
+                            <option value="">Select a template...</option>
+                            {% for template in templates %}
+                            <option value="{{ template.id }}">{{ template.name }} - {{ template.subject }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="sender_name" class="form-label">Sender Name</label>
+                            <input type="text" class="form-control" id="sender_name" name="sender_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sender_email" class="form-label">Sender Email</label>
+                            <input type="email" class="form-control" id="sender_email" name="sender_email" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="company_name" class="form-label">Company Name</label>
+                        <input type="text" class="form-control" id="company_name" name="company_name" value="Your Company">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.getElementById('createCampaignForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    data.template_id = parseInt(data.template_id);
+    
+    try {
+        const response = await fetch('{{ url_for("campaign.create_campaign") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}
+

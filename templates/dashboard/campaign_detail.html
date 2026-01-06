@@ -1,0 +1,255 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}{{ campaign.name }} - Campaign Detail{% endblock %}
+
+{% block content %}
+<h1 class="h2 mb-4">{{ campaign.name }}</h1>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Campaign Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <th>Name:</th>
+                        <td>{{ campaign.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Template:</th>
+                        <td>{{ campaign.template.name if campaign.template else 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            <span class="badge bg-{{ 'success' if campaign.status == 'sent' else 'warning' if campaign.status == 'draft' else 'secondary' }}">
+                                {{ campaign.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Sender:</th>
+                        <td>{{ campaign.sender_name }} &lt;{{ campaign.sender_email }}&gt;</td>
+                    </tr>
+                    <tr>
+                        <th>Company:</th>
+                        <td>{{ campaign.company_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Created:</th>
+                        <td>{{ campaign.created_at.strftime('%Y-%m-%d %H:%M:%S') if campaign.created_at else 'N/A' }}</td>
+                    </tr>
+                    {% if campaign.sent_at %}
+                    <tr>
+                        <th>Sent:</th>
+                        <td>{{ campaign.sent_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Emails Sent:</strong> {{ campaign.get_emails_sent_count() }}
+                </div>
+                <div class="mb-3">
+                    <strong>Total Clicks:</strong> {{ campaign.get_clicks_count() }}
+                    {% if all_click_logs_count != clicked_logs_count %}
+                    <br><small class="text-muted">({{ all_click_logs_count }} total entries, {{ clicked_logs_count }} clicked)</small>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <strong>Click-Through Rate:</strong> 
+                    <span class="badge bg-{{ 'danger' if campaign.get_click_through_rate() >= 50 else 'warning' if campaign.get_click_through_rate() >= 20 else 'success' }}">
+                        {{ campaign.get_click_through_rate() }}%
+                    </span>
+                </div>
+                {% if campaign.status == 'draft' %}
+                <div class="mt-4">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#launchCampaignModal">
+                        <i class="bi bi-send"></i> Launch Campaign
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Click Logs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Click Logs</h5>
+            </div>
+            <div class="card-body">
+                {% if click_logs %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Email</th>
+                                <th>Clicked At</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in click_logs %}
+                            <tr>
+                                <td>{{ log.employee.name if log.employee else 'N/A' }}</td>
+                                <td>{{ log.employee.email if log.employee else 'N/A' }}</td>
+                                <td>{{ log.clicked_at.strftime('%Y-%m-%d %H:%M:%S') if log.clicked_at else 'N/A' }}</td>
+                                <td>{{ log.ip_address or 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No clicks recorded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Launch Campaign Modal -->
+{% if campaign.status == 'draft' %}
+<div class="modal fade" id="launchCampaignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Launch Campaign</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="launchCampaignForm">
+                <div class="modal-body">
+                    <p>Select employees to send this campaign to:</p>
+                    <div id="employeeList">
+                        <!-- Will be populated via JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Launch Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% block scripts %}
+{% if campaign.status == 'draft' %}
+<script>
+// Fetch employees when modal opens
+document.getElementById('launchCampaignModal').addEventListener('show.bs.modal', async function() {
+    try {
+        const response = await fetch('{{ url_for("admin.employees") }}');
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const employees = doc.querySelectorAll('tbody tr');
+        
+        const employeeList = document.getElementById('employeeList');
+        employeeList.innerHTML = '';
+        
+        employees.forEach(row => {
+            const name = row.cells[0].textContent.trim();
+            const email = row.cells[1].textContent.trim();
+            const id = row.cells[5].querySelector('button').getAttribute('onclick').match(/\d+/)[0];
+            
+            const div = document.createElement('div');
+            div.className = 'form-check mb-2';
+            div.innerHTML = `
+                <input class="form-check-input" type="checkbox" name="employee_ids" value="${id}" id="emp_${id}">
+                <label class="form-check-label" for="emp_${id}">
+                    ${name} (${email})
+                </label>
+            `;
+            employeeList.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Error loading employees:', error);
+        document.getElementById('employeeList').innerHTML = '<p class="text-danger">Error loading employees</p>';
+    }
+});
+
+let isSubmitting = false;
+
+document.getElementById('launchCampaignForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmitting) {
+        return;
+    }
+    
+    const formData = new FormData(this);
+    const employeeIds = formData.getAll('employee_ids').map(id => parseInt(id));
+    
+    if (employeeIds.length === 0) {
+        alert('Please select at least one employee');
+        return;
+    }
+    
+    // Disable submit button
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Launching...';
+    isSubmitting = true;
+    
+    const data = {
+        employee_ids: employeeIds
+    };
+    
+    try {
+        const response = await fetch('{{ url_for("campaign.launch_campaign", campaign_id=campaign.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            // Close modal first
+            const modal = bootstrap.Modal.getInstance(document.getElementById('launchCampaignModal'));
+            if (modal) {
+                modal.hide();
+            }
+            // Show success message and reload
+            alert(result.message);
+            location.reload();
+        } else {
+            alert('Error: ' + (result.error || 'Failed to launch campaign'));
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            isSubmitting = false;
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        isSubmitting = false;
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
+{% endblock %}
+
