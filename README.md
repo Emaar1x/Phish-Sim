@@ -27,8 +27,8 @@ A comprehensive cybersecurity awareness and phishing simulation platform designe
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd phishing-simulator
+   git clone https://github.com/Emaar1x/Phish-Sim.git
+   cd Phish-Sim
    ```
 
 2. **Install dependencies**
@@ -106,7 +106,7 @@ http://localhost:5000/admin
 ## Project Structure
 
 ```
-phishing-simulator/
+Phish-Sim/
 │
 ├── app.py                 # Main Flask application
 ├── config.py              # Configuration settings
