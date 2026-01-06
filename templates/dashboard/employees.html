@@ -92,11 +92,25 @@
 
 {% block scripts %}
 <script>
+let isSubmittingEmployee = false;
+
 document.getElementById('addEmployeeForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Prevent duplicate submissions
+    if (isSubmittingEmployee) {
+        return;
+    }
+    
     const formData = new FormData(this);
     const data = Object.fromEntries(formData);
+    
+    // Disable submit button
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+    isSubmittingEmployee = true;
     
     try {
         const response = await fetch('{{ url_for("admin.employees") }}', {
@@ -110,12 +124,26 @@ document.getElementById('addEmployeeForm').addEventListener('submit', async func
         const result = await response.json();
         
         if (response.ok) {
+            // Close modal and reload
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addEmployeeModal'));
+            if (modal) {
+                modal.hide();
+            }
             location.reload();
         } else {
-            alert('Error: ' + result.error);
+            // Show error message
+            if (result.error) {
+                alert('Error: ' + result.error);
+            }
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            isSubmittingEmployee = false;
         }
     } catch (error) {
         alert('Error: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        isSubmittingEmployee = false;
     }
 });
 

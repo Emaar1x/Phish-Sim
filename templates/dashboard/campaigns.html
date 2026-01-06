@@ -111,12 +111,26 @@
 
 {% block scripts %}
 <script>
+let isSubmittingCampaign = false;
+
 document.getElementById('createCampaignForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmittingCampaign) {
+        return;
+    }
     
     const formData = new FormData(this);
     const data = Object.fromEntries(formData);
     data.template_id = parseInt(data.template_id);
+    
+    // Disable submit button
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+    isSubmittingCampaign = true;
     
     try {
         const response = await fetch('{{ url_for("campaign.create_campaign") }}', {
@@ -130,12 +144,26 @@ document.getElementById('createCampaignForm').addEventListener('submit', async f
         const result = await response.json();
         
         if (response.ok) {
-            location.reload();
+            // Close modal first
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createCampaignModal'));
+            if (modal) {
+                modal.hide();
+            }
+            // Small delay to ensure modal closes before reload
+            setTimeout(() => {
+                location.reload();
+            }, 100);
         } else {
             alert('Error: ' + result.error);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            isSubmittingCampaign = false;
         }
     } catch (error) {
         alert('Error: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        isSubmittingCampaign = false;
     }
 });
 </script>

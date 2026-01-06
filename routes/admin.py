@@ -86,14 +86,23 @@ def employees():
         if not all([name, email, department]):
             return jsonify({'error': 'Missing required fields'}), 400
         
-        # Check if email already exists
-        existing = Employee.query.filter_by(email=email).first()
-        if existing:
-            return jsonify({'error': 'Employee with this email already exists'}), 400
-        
-        employee = Employee(name=name, email=email, department=department)
-        db.session.add(employee)
-        db.session.commit()
+        try:
+            # Check if email already exists (case-insensitive)
+            existing = Employee.query.filter(db.func.lower(Employee.email) == email.lower()).first()
+            if existing:
+                return jsonify({'error': 'Employee with this email already exists'}), 400
+            
+            employee = Employee(name=name, email=email, department=department)
+            db.session.add(employee)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            # Check if it's a unique constraint violation (database level)
+            error_str = str(e).lower()
+            if 'unique' in error_str or 'duplicate' in error_str or 'integrity' in error_str:
+                return jsonify({'error': 'Employee with this email already exists'}), 400
+            # Re-raise if it's a different error
+            raise
         
         if request.is_json:
             return jsonify({'message': 'Employee added successfully', 'employee': employee.to_dict()}), 201
